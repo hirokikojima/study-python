@@ -1,8 +1,8 @@
 from enum import Enum
-from typing import Union
+from typing import Annotated, List, Union
 from pydantic import BaseModel
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Path, Query
 
 app = FastAPI()
 
@@ -32,10 +32,28 @@ def read_root():
 def read_items(skip: int = 0, limit: int = 10):
     return fake_items_db[skip: limit]
 
+# NOTE Queryで追加バリデーションの定義などが可能、またList型を引数とすることで複数の値を持つこともできる
+# https://fastapi.tiangolo.com/ja/tutorial/query-params-str-validations/#_2
+# https://fastapi.tiangolo.com/ja/tutorial/query-params-str-validations/#_7
+@app.get("/items/search")
+def search_items(
+    q: List[str] = Query(
+        title = "検索クエリ", # docs用のタイトル
+        description = "検索用のクエリパラメータ", # docs用の説明文
+        default = [],
+        max_length = 50,
+
+    )
+):
+    return {"q": q}
+
 # NOTE オプショナルなパラメータはデフォルト値をNoneとして表現する
 # https://fastapi.tiangolo.com/ja/tutorial/query-params/#_3
 @app.get("/items/{item_id}")
-def read_item(item_id: int, q: Union[str, None] = None):
+def read_item(
+    item_id: int = Path(title="The ID of the item to get", default=None, gt=0, le=1000),
+    q: Union[str, None] = None
+):
     return {"item_id": item_id, "q": q}
 
 @app.get("/users/me")
